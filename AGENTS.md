@@ -4,7 +4,7 @@ Assistente de Perguntas & Respostas 100% offline sobre o Regulamento Geral de Ha
 
 ## Estrutura e fluxo
 
-- `build_index.py` extrai o texto de `REG HABITAÇÃO PUBLICAÇÃO EM DR II - 29 JAN 24.pdf` e gera `data.js` (o `window.CMS_HABITACAO`). **`data.js` é código gerado — nunca editar manualmente.** Regenerar com `python build_index.py` (requer `pymupdf`, já em `requirements.txt`; instalado com Python 3.12 no ambiente).
+- `scripts/build_index.py` extrai o texto de `REG HABITAÇÃO PUBLICAÇÃO EM DR II - 29 JAN 24.pdf` e gera `data.js` (o `window.CMS_HABITACAO`). **`data.js` é código gerado — nunca editar manualmente.** Regenerar com `python scripts/build_index.py` (requer `pymupdf`, já em `scripts/requirements.txt`; instalado com Python 3.12 no ambiente). O `build_index.py` e o `requirements.txt` vivem na pasta `scripts/` para que a raiz do repositório contenha apenas o site estático (evita que o Vercel o detete como projeto Python).
 - `Regulamento Habitação A.M.S.pdf` tem a camada de texto bloqueada (anti-cópia) e **não é extraível**; o corpus vem sempre do documento DR II. Não perder tempo a tentar extrair o A.M.S.
 - Não há servidor nem build: basta abrir `index.html` no browser. O histórico vive em `localStorage` (chave `cms_hab_hist_v1`).
 
