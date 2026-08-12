@@ -296,14 +296,19 @@ fim caso pra pois então depois assim bem mal qual quais apenas está estão
     return "Documento";
   }
 
-  function buildAnswer(qtokens, ranked) {
+  function buildAnswer(question, qtokens, qtype, ranked) {
     const top = ranked.slice(0, MAX_CHUNKS).filter(function (r) { return r.score > 0; });
     if (!top.length) return null;
 
     const srcName = sourceLabel(top[0].chunk.src);
 
     const parts = [];
-    parts.push("Com base no documento «" + srcName + "»:");
+    if (qtype === "yes_no") {
+      const direct = buildDirectAnswer(question, qtokens, top, srcName);
+      parts.push(direct);
+    } else {
+      parts.push("Com base no documento «" + srcName + "»:");
+    }
 
     let total = 0;
     for (let i = 0; i < top.length; i++) {
@@ -319,6 +324,92 @@ fim caso pra pois então depois assim bem mal qual quais apenas está estão
 
     parts.push("— Fonte: " + srcName);
     return parts.join("\n\n");
+  }
+
+  /* ==================== Raciocínio da resposta direta ====================
+     Para perguntas de sim/não, a resposta abre com uma frase direta
+     (Sim/Não/Depende) deduzida do teor dos artigos correspondentes,
+     seguida da transcrição dos artigos que a fundamentam. */
+
+  function classifyQuestion(question) {
+    const q = removeAccents(question.trim().toLowerCase()).replace(/\s+/g, " ");
+    const wh = /^(quais?|o que|que|como|quando|quem|onde|quanto|porque|por que|em que|a que|ate quando|de que|para que|se o)\b/;
+    if (wh.test(q)) return "open";
+    const modal = /\b(posso|pode-se|pode\b|podemos|poderia|poderiam|poderao|poderi|pode ser|posso ser|serei|sera que|e possivel|e permitido|devo|sou obrigado)\b/;
+    if (modal.test(q)) return "yes_no";
+    return "open";
+  }
+
+  function parseYesNoPredicate(question) {
+    const q = question.trim().replace(/\s+/g, " ");
+    const re = /\b(posso eu|posso|pode-se|podemos|poderi[ae]|poder[aá]|serei|ser[aá] que|[eé] poss[ií]vel|[eé] permitido|devo|sou obrigado|pode ser|pode)\b\s+(ser\s+)?(.+)$/i;
+    const m = q.match(re);
+    if (!m) return null;
+    const modal = m[1].toLowerCase();
+    const serGroup = m[2];
+    const subject = m[3].replace(/\s*[?!/.]+\s*$/, "").trim();
+    const isSer = !!serGroup && serGroup.toLowerCase().indexOf("ser") === 0;
+    const action = (modal.indexOf("devo") === 0 || modal === "sou obrigado")
+      ? "deve"
+      : "pode";
+    return { action: action, isSer: isSer, subject: subject };
+  }
+
+  var POLARITY_AFFIRMATIVE = [
+    /\bpode\b/, /\bpodem\b/, /\bpodera\b/, /\bpoderam\b/, /e possivel/, /e permitido/,
+    /\bpermite\b/, /admite/, /nao e proibido/, /nao esta impedido/, /nao se encontra impedido/,
+    /nao impede/, /nao obsta/, /\bdeve ser\b/, /\bdevem\b/, /nao fica privado/, /nao perde/
+  ];
+
+  var POLARITY_NEGATIVE = [
+    /nao pode/, /nao podem/, /nao e possivel/, /nao e permitido/, /\bproibido\b/, /\bvedado\b/,
+    /\bimpedido\b/, /\bimpedidos\b/, /nao se encontra/, /nao estao/, /exclui/, /nao pode ser/,
+    /fica proibido/, /suspens/
+  ];
+
+  function polarityTotal(text, regexes) {
+    let s = 0;
+    for (let i = 0; i < regexes.length; i++) {
+      if (regexes[i].test(text)) s++;
+    }
+    return s;
+  }
+
+  function determineVerdict(evidence) {
+    const t = removeAccents(evidence.toLowerCase());
+    const aff = polarityTotal(t, POLARITY_AFFIRMATIVE);
+    const neg = polarityTotal(t, POLARITY_NEGATIVE);
+    if (neg > aff) return "nao";
+    if (aff > neg) return "sim";
+    return "depende";
+  }
+
+  function buildDirectAnswer(question, qtokens, top, srcName) {
+    const evidence = top
+      .slice(0, 2)
+      .map(function (r) { return extractAnswer(r.chunk, qtokens); })
+      .join("\n\n");
+    const verdict = determineVerdict(evidence);
+    const parsed = parseYesNoPredicate(question);
+    let can;
+    if (parsed) {
+      can = parsed.action + " " + (parsed.isSer ? "ser " : "") + parsed.subject;
+    } else {
+      can = "pode a situação descrita";
+    }
+    const cannot = "não " + can;
+
+    if (verdict === "sim") {
+      return "Sim, " + can + ". Esta hipótese está contemplada no Regulamento Geral de Habitação do " +
+        "Município de Sintra (documento «" + srcName + "»), conforme a transcrição dos artigos abaixo.";
+    }
+    if (verdict === "nao") {
+      return "Não, " + cannot + ". O Regulamento Geral de Habitação do Município de Sintra (documento «" +
+        srcName + "») não prevê essa hipótese nos termos formulados, conforme a transcrição dos artigos abaixo.";
+    }
+    return "Depende das circunstâncias do caso concreto: " + can + " apenas nas condições previstas no " +
+      "Regulamento Geral de Habitação do Município de Sintra (documento «" + srcName + "»), " +
+      "conforme a transcrição dos artigos abaixo.";
   }
 
   const DECLINE = "Lamento, mas não posso responder a essa questão. Este assistente responde " +
@@ -375,7 +466,8 @@ fim caso pra pois então depois assim bem mal qual quais apenas está estão
     const topScore = ranked.length ? ranked[0].score : 0;
     if (topScore <= 0) return DECLINE;
 
-    const answer = buildAnswer(qtokensFull, ranked);
+    const qtype = classifyQuestion(question);
+    const answer = buildAnswer(question, qtokensFull, qtype, ranked);
     if (!answer) return DECLINE;
     return answer;
   }
@@ -588,6 +680,9 @@ fim caso pra pois então depois assim bem mal qual quais apenas está estão
       scoreChunk: scoreChunk,
       extractAnswer: extractAnswer,
       buildAnswer: buildAnswer,
+      classifyQuestion: classifyQuestion,
+      determineVerdict: determineVerdict,
+      parseYesNoPredicate: parseYesNoPredicate,
       matchingCorpusTokens: matchingCorpusTokens,
       expandSynonyms: expandSynonyms,
       chunks: chunks
