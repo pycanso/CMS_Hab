@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perguntas &amp; Respostas — Habitação C.M. Sintra</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">CMS</div>
+      <div class="brand-text">
+        <h1>Habitação — C.M. Sintra</h1>
+        <p>Perguntas &amp; Respostas · Regulamento Geral de Habitação do Município de Sintra</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="panel ask-panel">
+    <h2>Coloque a sua pergunta</h2>
+    <p class="muted">As respostas são elaboradas exclusivamente a partir do conteúdo dos dois documentos PDF disponíveis, em tom institucional e sem qualquer conteúdo acrescentado.</p>
+
+    <div class="query-row">
+      <label for="question-input" class="sr-only">Escreva a sua pergunta</label>
+      <input id="question-input" type="text" placeholder="Ex.: Quais os requisitos para aceder ao arrendamento apoiado?" autocomplete="off" spellcheck="true">
+      <button id="ask-btn" type="button">Perguntar</button>
+    </div>
+
+    <div class="suggestions" id="suggestions" aria-label="Perguntas sugeridas"></div>
+
+    <label for="answer-text" class="answer-label">Resposta</label>
+    <textarea id="answer-text" readonly spellcheck="false" placeholder="A resposta será apresentada aqui..."></textarea>
+
+    <p class="scope-note" id="scope-note"></p>
+  </section>
+
+  <section class="panel history-panel">
+    <div class="history-head">
+      <h2>Histórico de perguntas</h2>
+      <button id="clear-history" type="button" class="link-btn">Limpar</button>
+    </div>
+    <div id="history-list" class="history-list" aria-live="polite"></div>
+    <button id="toggle-history" type="button" class="toggle-btn" hidden>Mostrar todas as perguntas</button>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>Este assistente responde apenas a questões relacionadas com a <strong>Habitação da C.M. Sintra</strong>, com base exclusivamente no conteúdo dos documentos PDF disponíveis na pasta.</p>
+  <p class="small" id="footer-sources"></p>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
