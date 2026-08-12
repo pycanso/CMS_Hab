@@ -1,0 +1,5 @@
+{
+  "framework": "html",
+  "buildCommand": "echo",
+  "outputDirectory": "."
+}
