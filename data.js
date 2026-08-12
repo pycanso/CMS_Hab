@@ -1,6 +1,6 @@
 /* Gerado por build_index.py — não editar. */
 window.CMS_HABITACAO = {
- "builtAt": "2026-08-12T17:13:54",
+ "builtAt": "2026-08-12T21:32:52",
  "sources": [
   {
    "name": "Diário da República, 2.ª série, n.º 20, de 29 de janeiro de 2024 (Aviso n.º 2346/2024) — Regulamento Geral de Habitação do Município de Sintra",
